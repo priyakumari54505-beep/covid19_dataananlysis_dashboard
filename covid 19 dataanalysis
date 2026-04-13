@@ -1,0 +1,58 @@
+# Import Libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load Dataset
+df = pd.read_csv("covid_data.csv")
+
+# Convert date column
+df['date'] = pd.to_datetime(df['date'])
+
+# Basic Info
+print(df.head())
+
+# Group Data
+country_group = df.groupby("country").sum(numeric_only=True)
+
+# Set Style
+sns.set(style="whitegrid")
+
+# Create Dashboard
+plt.figure(figsize=(15,10))
+
+# 1. Confirmed Cases Trend
+plt.subplot(2,2,1)
+for country in df['country'].unique():
+    data = df[df['country'] == country]
+    plt.plot(data['date'], data['confirmed'], label=country)
+plt.title("Confirmed Cases Over Time")
+plt.legend()
+
+# 2. Deaths Comparison
+plt.subplot(2,2,2)
+sns.barplot(x=country_group.index, y=country_group['deaths'])
+plt.title("Total Deaths by Country")
+
+# 3. Recovery Rate
+df['recovery_rate'] = (df['recovered'] / df['confirmed']) * 100
+
+plt.subplot(2,2,3)
+sns.lineplot(data=df, x='date', y='recovery_rate', hue='country')
+plt.title("Recovery Rate Over Time")
+
+# 4. Active Cases
+df['active'] = df['confirmed'] - df['deaths'] - df['recovered']
+
+plt.subplot(2,2,4)
+sns.barplot(x='country', y='active', data=df.groupby('country').sum(numeric_only=True).reset_index())
+plt.title("Active Cases by Country")
+
+plt.tight_layout()
+plt.savefig("covid_dashboard.png")
+plt.show()
+
+# Insights
+print("\n--- Insights ---")
+print("Highest cases country:\n", country_group['confirmed'].idxmax())
+print("Highest deaths country:\n", country_group['deaths'].idxmax())
